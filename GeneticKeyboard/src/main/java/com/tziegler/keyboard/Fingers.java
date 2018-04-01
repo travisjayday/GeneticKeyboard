@@ -11,6 +11,7 @@ public class Fingers {
 	int lastFinger = -1; 	// finger index who perfomed last motionEvent
 	public static final boolean DEBUG = Keyboard.DEBUG;
 	
+	
 	public static class MotionEvent {
 		MotionEvent(String s, int d) {
 			name = s; 
