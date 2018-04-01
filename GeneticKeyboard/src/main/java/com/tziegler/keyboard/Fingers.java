@@ -10,6 +10,7 @@ public class Fingers {
 	final int[] fingerHomes = { 12, 13, 14, 15, 18, 19, 20, 21, 22 }; 	// home rows of fingers
 	int lastFinger = -1; 	// finger index who perfomed last motionEvent
 	public static final boolean DEBUG = Keyboard.DEBUG;
+	
 	public static class MotionEvent {
 		MotionEvent(String s, int d) {
 			name = s; 
