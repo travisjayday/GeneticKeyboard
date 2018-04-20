@@ -1,6 +1,8 @@
 package com.tziegler.keyboard;
 
 import java.awt.List;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,39 +12,73 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.OptionalDouble;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.bind.annotation.XmlRootElement;
+
+import com.tziegler.keyboard.datacollector.DataMotionEvents;
+import com.tziegler.keyboard.datacollector.MotionEventAnalyzer;
+import com.tziegler.keyboard.graphics.EvolutionPlotter;
+
 public class PopulationManager {
 
 	static final boolean DEBUG = false;
 
-	int populationSize = 500; 	// number of keyboard in a population (P)
-	
-	int survivalSize = 150; 	// default: 30% of P. determines how many 
-								// unaletered species make it to next gen. (S)
-	
-	int mutationRate = populationSize - survivalSize; // determines how many 
+	int mutationSize; // determines how many 
 								// keyboards will be mutants in the next gen. (M)
-	
-	static final double CROSSOVER_PROB = 0.2	; 
-	static final double MUTATION_PROB = 0.2; // likelihood of invoking the mutation operator
-	static final double MUTATION_RATE = 0.05; // likelihood of a gene changing
-	
 	Map<Keyboard, Double> popList; 
 
 	TextManager textManager;
 	int leastFittestInGen = 0;
 	Keyboard mostFittestInGen;//= Integer.MAX_VALUE; 
+	EvolutionParams evoParams; 
+	long startTime = 0; 
 	
 	public void initPopulation() {
-		System.out.println("populationSize: " + populationSize);
-		System.out.println("survivalSize: " + survivalSize);
-		System.out.println("crossover prob: " + CROSSOVER_PROB);
-		System.out.println("mutation prob: " + MUTATION_PROB);
-		System.out.println("mutation rate: " + MUTATION_RATE);
+		//evoParams = new EvolutionParams(); 
+		File params = new File("EvoParams.xml");
+		
+		JAXBContext context;
+		try {
+			context = JAXBContext.newInstance(EvolutionParams.class);
+		    Unmarshaller m = context.createUnmarshaller(); 
+		    
+		    System.out.println("Reading from: " + params.getAbsolutePath());
+		    if (!params.exists()) { 
+		    	evoParams = new EvolutionParams(); 
+			    Marshaller ma = context.createMarshaller();
+			    ma.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+				   
+			    System.out.println("EvoParams.xml not found, writing defaults to: " + params.getAbsolutePath());
+				    
+				params.createNewFile();
+				FileOutputStream out = new FileOutputStream(params); 
+				    
+				ma.marshal(evoParams, out);
+		    }
+		    else {
+		    	evoParams = (EvolutionParams) m.unmarshal(params); 
+		    }
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		startTime = System.currentTimeMillis(); 
+		System.out.println("Timestamp Start: " + System.currentTimeMillis());
+		System.out.println("populationSize: " + evoParams.POP_SIZE);
+		System.out.println("survivalSize: " + evoParams.SURVIVAL_SIZE);
+		System.out.println("crossover prob: " + evoParams.CROSSOVER_PROB);
+		System.out.println("mutation prob: " + evoParams.MUTATION_PROB);
+		System.out.println("mutation rate: " + evoParams.MUTATION_RATE);
 		// init text
 		textManager = new TextManager(); 
 		textManager.loadBook(); 
@@ -52,7 +88,7 @@ public class PopulationManager {
 		mostFittestInGen = new Keyboard(true); 
 		popList.put(mostFittestInGen, (double) mostFittestInGen.getFitness(textManager)); 
 		
-		for (int i = 0; i < populationSize; i++) {
+		for (int i = 0; i < evoParams.POP_SIZE; i++) {
 			Keyboard b = new Keyboard(true); // random keyboard
 			int fit = b.getFitness(textManager);
 			popList.put(b, (double)fit);
@@ -66,17 +102,11 @@ public class PopulationManager {
 	}
 	
 	public void runGeneration() {
-		EvolutionPlotter plotter = new EvolutionPlotter(); 
-		int gen = 0; 
-		while (gen < 20) {
-		//	AtomicReference<Double> fitnessSum0 = new AtomicReference<>(0.0);
-			
-		//	popList.replaceAll((k, v) -> v = (leastFittestInGen - v));
-		//*	popList.forEach((k, v) -> fitnessSum0.accumulateAndGet(v, (x, y) -> x + y )); 
-		//*	popList.replaceAll((k, v) -> v = v / fitnessSum0.get());
-			
-			//popList.forEach((k, v) -> fitnessSum1.accumulateAndGet(v, (x, y) -> x + y )); 
-			
+		EvolutionPlotter plotter = new EvolutionPlotter();
+		long genStartTime = System.currentTimeMillis(); 
+		int gen = 0;
+		while (gen < evoParams.GENERATIONS) {
+	
 			// sort list from small to big, keeping only the limit(n) smallest entries
 			popList = popList.entrySet().stream()
 		        .sorted(Map.Entry.<Keyboard, Double>comparingByValue())
@@ -87,9 +117,10 @@ public class PopulationManager {
 		        		(k, v) -> k,
 		        		LinkedHashMap::new));
 			
-			double inc = 1 / (double)populationSize; 
+			double inc = 1 / (double)evoParams.POP_SIZE; 
 			int i = 0; 
 			//sortedMap.replaceAll((k, v) -> v = (++i) * inc);
+			OptionalDouble avg = popList.entrySet().stream().mapToInt(a -> (int)(double)a.getValue()).average(); 
 			
 			for (Map.Entry<Keyboard, Double> e : popList.entrySet()) {
 				e.setValue(++i * inc); 
@@ -97,6 +128,7 @@ public class PopulationManager {
 			
 			mostFittestInGen = popList.entrySet().iterator().next().getKey(); 
 			plotter.addFittestInGen(mostFittestInGen.getFitness());
+			plotter.addAvgFitInGen((int)avg.getAsDouble()); 
 			
 			if (DEBUG) {
 				System.out.println("Population: \n");
@@ -106,23 +138,28 @@ public class PopulationManager {
 			}
 			
 			
-			
+	
 			System.out.println("\nGeneration: " + gen);
 			System.out.println("least fittest: " + leastFittestInGen);
 			System.out.println("best fitness: " + mostFittestInGen.getFitness());
-	
-			LinkedHashMap<Keyboard, Double> nextGen = new LinkedHashMap<>(populationSize + 1);
+			System.out.println("avg fitness: " + avg);
+		
+			double dTime = (System.currentTimeMillis() - genStartTime) / 1000.0; 
+			System.out.println("performance: " + evoParams.POP_SIZE / dTime + " keyboards per second");
+			
+			genStartTime = System.currentTimeMillis();
+			LinkedHashMap<Keyboard, Double> nextGen = new LinkedHashMap<>(evoParams.POP_SIZE + 1);
 			
 			//sortedMap.forEach((k, v) -> nextGen.put(k, v));  
 			Iterator<Map.Entry<Keyboard, Double>> it = popList.entrySet().iterator(); 
-			for (i = 0; i < survivalSize; i++) {
+			for (i = 0; i < evoParams.SURVIVAL_SIZE; i++) {
 				Map.Entry<Keyboard, Double> e = it.next();
 				nextGen.put(e.getKey(), (double)e.getKey().getFitness(textManager)); 
 			}
 			
 			System.out.println("nextgen size: " + nextGen.size());
 			// fill remaining gen with new bois
-			while (nextGen.size() < populationSize) {
+			while (nextGen.size() < evoParams.POP_SIZE) {
 				
 				if (DEBUG) System.out.println("Populating gen");
 				// roulette selection 
@@ -145,7 +182,6 @@ public class PopulationManager {
 					}
 					
 					cumuSum += entry.getValue(); 	// add fitness
-				//	System.out.println("cumuSum: " + cumuSum);
 				}
 				
 				
@@ -161,30 +197,26 @@ public class PopulationManager {
 				
 				son = reproduce(father, mother); 
 				
-				if (Math.random() <= MUTATION_PROB) {
+				if (Math.random() <= evoParams.MUTATION_PROB) {
 					mutate(son); 
 				}
 				
 				int fit = son.getFitness(textManager); 
 				nextGen.put(son, (double)fit); 
-				
-			/*	if (fit > leastFittestInGen)
-					leastFittestInGen = fit; 
-				if (fit < mostFittestInGen)
-					mostFittestInGen = fit; */
 			}
 			
 			popList = nextGen; 
 			gen++; 
 			mostFittestInGen.graphicsShow();
-			plotter.plotFittestInGen();
+			plotter.plotFittestInGen(true);
 		}
-
+		System.out.println("Timestamp End: " + System.currentTimeMillis());
+		System.out.println("Delta Time: " + (System.currentTimeMillis() - startTime) / (1000.0 * 60.0) + "minutes");
 	}
 	
 	public void mutate(Keyboard board) {
 		for (int i = 0; i < Keyboard.NUM_ABCKEYS; i++) {
-			if (Math.random() < MUTATION_RATE) {
+			if (Math.random() < evoParams.MUTATION_RATE) {
 				Key boardKey = board.getKey(i); 
 				
 				Key otherKey = //board.asciiToIndex(
@@ -200,7 +232,6 @@ public class PopulationManager {
 		}
 	}
 
-	
 	// implements crossover
 	public Keyboard reproduce(Keyboard fadder, Keyboard mudder) {
 		
@@ -219,7 +250,7 @@ public class PopulationManager {
 		// then copy a random amount of the mother's keyboard
 		// into this child.
 		for (int i = 0; i < Keyboard.NUM_ABCKEYS; i++) {
-			if (Math.random() < CROSSOVER_PROB) {
+			if (Math.random() < evoParams.CROSSOVER_PROB) {
 				Key fatherKey = father.getKey(i); 
 				Key motherKey = mother.getKey(i);
 				
@@ -234,48 +265,8 @@ public class PopulationManager {
 				
 				father.populateAbcToIndex(); 
 				mother.populateAbcToIndex();
-				
-				/*// update abcToKeyIndex lookup table
-				father.updateAbcToIndex(motherKey.getMainChar(), i); 
-				father.updateAbcToIndex(motherKey.getShifted(), i); 
-				
-				father.updateAbcToIndex(fatherKey.getMainChar(), fatherKeyIndex); 
-				father.updateAbcToIndex(fatherKey.getShifted(), fatherKeyIndex); 
-				
-				mother.updateAbcToIndex(fatherKey.getMainChar(), i); 
-				mother.updateAbcToIndex(fatherKey.getShifted(), i); 
-				
-				mother.updateAbcToIndex(motherKey.getMainChar(), motherKeyIndex);
-				mother.updateAbcToIndex(motherKey.getShifted(), motherKeyIndex);*/
-				
 			}
 		}
-		
-		// Crossover special keys
-		/*for (int i = 0; i < Keyboard.NUM_SPECIALKEYS; i++) {
-			if (Math.random() < CROSSOVER_PROB) {
-				char fatherKey = father.keys[i].getShifted(); 
-				char motherKey = mother.keys[i].getShifted();
-				int fatherKeyIndex = father.asciiToIndex(motherKey); 
-				int motherKeyIndex = mother.asciiToIndex(fatherKey); 
-				
-				// switch primary keys at i 
-				father.keys[i].setShifted(motherKey); 	// set father to mother at i 
-				mother.keys[i].setShifted(fatherKey); 	// set mother to father at i 
-				
-				// exchange other keys so that no duplicates remain
-				father.keys[fatherKeyIndex].setShifted(fatherKey); 	// 
-				mother.keys[motherKeyIndex].setShifted(motherKey); 
-				
-				// update abcToKeyIndex lookup table
-				father.populateAbcToIndex(motherKey, i); 
-				father.populateAbcToIndex(fatherKey, fatherKeyIndex); 
-				
-				mother.populateAbcToIndex(fatherKey, i); 
-				mother.populateAbcToIndex(motherKey, motherKeyIndex);
-			}
-		}*/
-		
 		return father; 
 	}
 }

@@ -1,8 +1,12 @@
 #!/bin/bash
-rm books/*
-for i in {1..200}
+
+outdir=../src/main/resources/books
+name=short.txt
+
+rm $outdir/*
+for i in {1..20}
 do
-	wget http://gutenberg.org/files/$i/$i.txt -P books/ 
-	cat books/$i.txt >> books/mainbook.txt
-	rm books/$i.txt
+	wget http://gutenberg.org/files/$i/$i.txt -P $outdir/ 
+	cat $outdir/$i.txt >> $outdir/$name
+	rm $outdir/$i.txt
 done

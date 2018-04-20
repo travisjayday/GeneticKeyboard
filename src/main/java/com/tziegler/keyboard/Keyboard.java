@@ -3,9 +3,11 @@ package com.tziegler.keyboard;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
+import com.tziegler.keyboard.graphics.GraphicKeyboard;
+
 public class Keyboard {
 	
-	static boolean DEBUG = false;
+	public static boolean DEBUG = false;
 	static boolean BENCHMARK = false;
 	static final int NUM_KEYS = 38; 
 	static final int NUM_SPECIALKEYS = 5; 
@@ -88,9 +90,9 @@ public class Keyboard {
 	
 	Integer fitness = null; 
 	
-	Keyboard() {
-		keys = dvorakKeys; 
-		specialKeys = dvorakSpecialKeys;
+	public Keyboard() {
+		keys = qwertyKeys; 
+		specialKeys = qwertySpecialKeys;
 		/*keys = dvorakD; 
 		specialKeys = qwertySpecialKeys; */
 		
@@ -103,13 +105,13 @@ public class Keyboard {
 			shuffleKeys(); 
 	}
 	
-	void setKeysDvorak() {
+	public void setKeysDvorak() {
 		keys = dvorakKeys; 
 		specialKeys = dvorakSpecialKeys;
 		populateAbcToIndex();
 	}
 	
-	void setKeysQWERTY() {
+	public void setKeysQWERTY() {
 		keys = qwertyKeys;
 		specialKeys = qwertySpecialKeys; 
 		populateAbcToIndex();
@@ -192,15 +194,15 @@ public class Keyboard {
 	}
 	
 	public void graphicsShow() {
-		GraphicKeyboard.showKeyboard(keys);
+		GraphicKeyboard.showKeyboard(this);
 	}
 	
 	public void graphicsShow(String title, boolean newWin) {
-		GraphicKeyboard.showKeyboard(keys, title, newWin);
+		GraphicKeyboard.showKeyboard(this, title, newWin);
 	}
 	
 	// returns the key that holds the ascii character c
-	int asciiToIndex(char c) {
+	public int asciiToIndex(char c) {
 		if (c >= 'a' && c <= 'z') 
 			return abcToKeyIndex[c - 'a'];
 		else if (c > 'A' && c < 'Z')
@@ -230,7 +232,7 @@ public class Keyboard {
 			return abcToKeyIndex[c - 63 + 37];
 		default:
 			//DSystem.out.print("char not recognized");
-			return 0;
+			return -1;
 		}
 	}
 	
@@ -268,7 +270,7 @@ public class Keyboard {
 		}
 	}
 	
-	void populateAbcToIndex() {
+	public void populateAbcToIndex() {
 		// populate lookup table
 		for (int i = 0; i < 33; i++) {
 			updateAbcToIndex(keys[i].getMainChar(), i);
@@ -319,10 +321,16 @@ public class Keyboard {
 		char c; 
 		for (byte b : text) {
 			c = (char) b;
+			int idx = asciiToIndex(c); 
+			
+			if (idx < 0) {
+				if (DEBUG) System.out.println("unknown char: '" + c + "'");
+				continue; 
+			}
 			
 			if (DEBUG) System.out.println("------------[" + c + "]--------");
 	
-			dtime = fingers.getMotionEventTime(asciiToIndex(c), needShift(c), c);
+			dtime = fingers.getMotionEventTime(idx, needShift(c), c);
 			
 			if (DEBUG) System.out.println("    dt: \t" + dtime + "ms");
 			
@@ -347,8 +355,8 @@ public class Keyboard {
 	}
 	
 	public Integer getFitness() {
-		if (fitness == null)
-			throw new java.lang.RuntimeException("Error: Requested Fitness without pre-computing it!"); 
+		//if (fitness == null)
+			//throw new java.lang.RuntimeException("Error: Requested Fitness without pre-computing it!"); 
 		return fitness; 
 	}
 }

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<evolutionParams>
+    <POP_SIZE>400</POP_SIZE>
+    <SURVIVAL_SIZE>9</SURVIVAL_SIZE>
+    <CROSSOVER_PROB>0.5</CROSSOVER_PROB>
+    <MUTATION_PROB>0.1</MUTATION_PROB>
+    <MUTATION_RATE>0.05</MUTATION_RATE>
+    <GENERATIONS>30</GENERATIONS>
+</evolutionParams>

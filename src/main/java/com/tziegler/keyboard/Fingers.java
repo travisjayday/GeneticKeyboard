@@ -22,19 +22,17 @@ public class Fingers {
 		public int getDuration() {
 			return duration;
 		}
-		String name; 
+		public String name; 
 		private int duration; 
-		int timesPressed;
-		int cumuDuration; 
+		public int timesPressed;
+		public int cumuDuration; 
 		
 		void averageDuration() {
 			duration = cumuDuration / timesPressed; 
 		}
 	}
-	
-	@XmlRootElement
+
 	public static class MotionEvents {
-		@XmlElement
 		  public static MotionEvent TAP = new MotionEvent("TAP", 100); 
 		  public static MotionEvent HOP_TAP = new MotionEvent("HOP_TAP", 200); 
 		  public static MotionEvent LEAP_TAP = new MotionEvent("LEAP_TAP", 200); 
@@ -47,8 +45,23 @@ public class Fingers {
 		  public static MotionEvent SPACE = new MotionEvent("ENTER", 20); 
 		  public static MotionEvent ENTER = new MotionEvent("ENTER", 20); 
 	}
+	
+	public static void printMotionEventTimes() {
+		System.out.println("Motion Event: \t Duration in ms");
+		System.out.println("TAP: \t" + Fingers.MotionEvents.TAP.getDuration());
+		System.out.println("HOP_TAP: \t" + Fingers.MotionEvents.HOP_TAP.getDuration());
+		System.out.println("LEAP_TAP: \t" + Fingers.MotionEvents.LEAP_TAP.getDuration());
+		System.out.println("NEAR_DTAP: \t" + Fingers.MotionEvents.NEAR_DTAP.getDuration());
+		System.out.println("FAR_DTAP: \t" + Fingers.MotionEvents.FAR_DTAP.getDuration());
+		System.out.println("LEAP_DTAP: \t" + Fingers.MotionEvents.LEAP_DTAP.getDuration());
+		System.out.println("SIDE_TAP: \t" + Fingers.MotionEvents.SIDE_TAP.getDuration());
+		System.out.println("PINKY_TAP: \t" + Fingers.MotionEvents.PINKY_TAP.getDuration());
+		System.out.println("SHIFT: \t" + Fingers.MotionEvents.SHIFT.getDuration());
+		System.out.println("SPACE: \t" + Fingers.MotionEvents.SPACE.getDuration());
+		System.out.println("ENTER: \t" + Fingers.MotionEvents.ENTER.getDuration());
+	}
 
-	Fingers() {
+	public Fingers() {
 		fingers = new int[8];
 		for (int i = 0; i < 4; i++) 
 			fingers[i] = 12 + i; 
@@ -90,7 +103,7 @@ public class Fingers {
 	}
 	
 	// returns a motion event. char is used to see if it is enter or space
-	MotionEvent getMotionEvent(int physicalKeyTo, char c) {
+	public MotionEvent getMotionEvent(int physicalKeyTo, char c) {
 		
 		int execFinger = keyToFinger[physicalKeyTo]; // finger that executes the motion
 		
@@ -169,8 +182,9 @@ public class Fingers {
 				fingers[execFinger] == physicalKeyTo + 23 + 1) {
 			return leapDTap(execFinger, physicalKeyTo); 
 		}
-		else if (fingers[execFinger] == physicalKeyTo + 10 || 
-				fingers[execFinger] == physicalKeyTo - 10) {
+		else if ((physicalKeyTo != 11 && fingers[execFinger] != 11) &&	// exclude pinky tap
+				(fingers[execFinger] == physicalKeyTo + 10 || 
+				fingers[execFinger] == physicalKeyTo - 10)) {
 			return nearDTap(execFinger, physicalKeyTo); 
 		}
 		else {
