@@ -2,6 +2,7 @@ package com.tziegler.keyboard.graphics;
 
 import java.awt.Dimension;
 import java.awt.List;
+import java.io.*;
 import java.util.ArrayList;
 
 import org.jfree.chart.ChartFactory;
@@ -17,6 +18,7 @@ public class EvolutionPlotter {
 	ArrayList<Integer> fittestInGen; 
 	ArrayList<Integer> avgFitnessInGen; 
 	ApplicationFrame lastFrame = null; 
+	BufferedWriter writer = null;
 	
 	public EvolutionPlotter() {
 		fittestInGen = new ArrayList<Integer>(); 
@@ -31,7 +33,7 @@ public class EvolutionPlotter {
 		avgFitnessInGen.add(f); 
 	}
 	
-	public void plotFittestInGen(boolean includeAvg) {
+	public void plotFittestInGen(boolean includeAvg, String name) {
 		if (lastFrame != null)
 			lastFrame.dispose();
 		
@@ -59,11 +61,24 @@ public class EvolutionPlotter {
 		ChartPanel panel = new ChartPanel(chart);
 		panel.setPreferredSize(new Dimension(640, 480));
 		
-		ApplicationFrame frame = new ApplicationFrame("name");
+		ApplicationFrame frame = new ApplicationFrame(name);
 		lastFrame = frame; 
 	
 		frame.setContentPane(panel);
 		frame.pack();
 		frame.setVisible(true);
+	}
+	
+	public void writeToFile(String fname) {
+		try { 
+			writer = new BufferedWriter(new FileWriter(fname));
+			for (int i = 0; i < fittestInGen.size(); i++) {
+				writer.append(fittestInGen.get(i) + ", " + avgFitnessInGen.get(i) + "\n");
+			}
+			writer.flush();
+			writer.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 }

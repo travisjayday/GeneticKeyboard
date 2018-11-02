@@ -10,13 +10,12 @@ import java.nio.file.Paths;
 public class TextManager {
 	byte[] book; 
 	
-	void loadBook() {
+	TextManager(String fname) {
 		byte[] fileString;
 		try {
 		//	fileString = Files.readAllBytes(Paths.get("data/books/mainbook.txt"));
-			String fil = "res/books/mini.txt";
-			System.out.println("Reading from " + fil); 
-			fileString = Files.readAllBytes(Paths.get(fil));
+			System.out.println("Reading from " + fname); 
+			fileString = Files.readAllBytes(Paths.get(fname));
 			book = fileString; 
 			//book = "hello".getBytes();  	
 			//System.out.println("Contents (Java 7 with character encoding ) : " + fileString);		      

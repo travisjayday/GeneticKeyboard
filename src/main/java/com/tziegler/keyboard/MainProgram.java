@@ -100,10 +100,11 @@ public class MainProgram {
 	public static void main(String[] args) {
 		loadOpencv();
 		GraphicKeyboard.motionDurationBasedOnDistances();
+		EvolutionParams evoParams = PopulationManager.loadEvoParams();
 		
 		while (true) { 
-			System.out.println("what do you want to do?");
-			System.out.print("1: run evolution"
+			System.out.println("-------FINAL BUILD!!!------\nwhat do you want to do?");
+			System.out.print("1: run evolution (with file & graph output)"
 					+ "\n2: run brute force"
 					+ "\n3: train empirical data"
 					+ "\n4: set motion event empirically"
@@ -116,8 +117,7 @@ public class MainProgram {
 			
 			switch (i) {
 			case 1: 
-				TextManager txt = new TextManager(); 
-				txt.loadBook();
+				TextManager txt = new TextManager(evoParams.BOOK_STRING); 
 				Keyboard qwertyBoard = new Keyboard(); 
 				qwertyBoard.setKeysQWERTY();
 				System.out.println("Qwerty Fitness: " + qwertyBoard.getFitness(txt));
@@ -128,7 +128,7 @@ public class MainProgram {
 				
 				System.out.println("Starting evolution");
 				PopulationManager manager = new PopulationManager(); 
-				manager.initPopulation(); 
+				manager.initPopulation(evoParams); 
 				manager.runGeneration();
 				
 				break;
@@ -136,8 +136,7 @@ public class MainProgram {
 				EvolutionPlotter plot = new EvolutionPlotter(); 
 				System.out.println("Brute forcing...");
 				Keyboard board = new Keyboard(); 
-				TextManager man = new TextManager(); 
-				man.loadBook();
+				TextManager man = new TextManager(evoParams.BOOK_STRING); 
 				man.getBook(); 
 				int fit = 900000;
 				int bestFit = Integer.MAX_VALUE;
@@ -152,7 +151,7 @@ public class MainProgram {
 								+ (System.currentTimeMillis() - genStartTime) / 1000.0 + " keyboards per second");
 						bestFit = fit; 
 						plot.addFittestInGen(bestFit);
-						plot.plotFittestInGen(false);
+						plot.plotFittestInGen(false, "test");
 					}
 				}
 				board.graphicsShow();
@@ -182,7 +181,7 @@ public class MainProgram {
 				
 				PopulationManager mg = new PopulationManager(); 
 				mg.evoParams = new EvolutionParams(); 
-				mg.evoParams.CROSSOVER_PROB = 0.2;
+				mg.evoParams.CROSSOVER_PROB = 0.5;
 				mg.reproduce(dad, mum).graphicsShow("son", true); 
 				
 				break;
